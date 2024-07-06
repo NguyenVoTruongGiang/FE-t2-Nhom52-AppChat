@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
   <component name="ChangeListManager">
     <list default="true" id="418a0278-0c31-41cd-b4b9-9dc715282f27" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
@@ -23,15 +26,34 @@
     "Notification.DisplayName-DoNotAsk-Vcs Important Messages": "VCS important messages",
     "Notification.DoNotAsk-Vcs Important Messages": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "main",
+    "git-widget-placeholder": "21130112",
     "ignore.virus.scanning.warn.message": "true",
     "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "E:/workspace/FE-t2-Nhom52-AppChat",
+    "last_opened_file_path": "E:/workspace/demo-rd",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
     "settings.editor.selected.configurable": "preferences.pluginManager",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
+  <component name="RunManager">
+    <configuration default="true" type="JetRunConfigurationType">
+      <module name="FE-t2-Nhom52-AppChat" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration default="true" type="KotlinStandaloneScriptRunConfigurationType">
+      <module name="FE-t2-Nhom52-AppChat" />
+      <option name="filePath" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+  </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
@@ -50,6 +72,8 @@
       <updated>1718182051576</updated>
       <workItem from="1718182052644" duration="52000" />
       <workItem from="1718182111114" duration="56000" />
+      <workItem from="1719083453253" duration="22000" />
+      <workItem from="1719083482330" duration="592000" />
     </task>
     <servers />
   </component>
