@@ -104,11 +104,11 @@ const useWebSocket = (currentUser, dispatch) => {
     );
   };
 
-  const logout = () => {
-    sendMessage(
-      JSON.stringify({ action: "onchat", data: { event: "LOGOUT" } })
-    );
-  };
+  // const logout = () => {
+  //   sendMessage(
+  //     JSON.stringify({ action: "onchat", data: { event: "LOGOUT" } })
+  //   );
+  // };
 
   const createRoom = (name) => {
     sendMessage(
@@ -188,7 +188,7 @@ const useWebSocket = (currentUser, dispatch) => {
     loginUser,
     sendChatMessage,
     users,
-    logout,
+    // logout,
     createRoom,
     joinRoom,
     getRoomChatMessages,

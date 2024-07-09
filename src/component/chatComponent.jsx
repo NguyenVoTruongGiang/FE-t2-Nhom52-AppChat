@@ -1,11 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import Message from "./Message";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSmile } from "@fortawesome/free-solid-svg-icons";
-import EmojiPicker from "emoji-picker-react";
 import "../App.css";
-import { useNavigate } from "react-router-dom";
 import useWebSocket from "../hooks/useWebSocket";
 import { setUserList } from "../redux/actions/userListSlice";
 
@@ -33,13 +29,13 @@ const ChatComponent = ({ currentUser, onLogout }) => {
             alert("GET_USER_LIST failed. Please try again.");
           }
           break;
-        case "LOGOUT":
-          if (message.status === "success") {
-            onLogout();
-          } else {
-            alert("Logout failed. Please try again.");
-          }
-          break;
+        // case "LOGOUT":
+        //   if (message.status === "success") {
+        //     onLogout();
+        //   } else {
+        //     alert("Logout failed. Please try again.");
+        //   }
+        //   break;
         default:
           break;
       }
@@ -72,12 +68,13 @@ const ChatComponent = ({ currentUser, onLogout }) => {
     setCurrentUserMessages(filteredMessages);
   };
 
-  const handleLogout = (e) => {
-    e.preventDefault();
-    onLogout();
+  const handleLogout = () => {
+    if (typeof onLogout === "function") {
+      onLogout();
+    } else {
+      console.error("onLogout is not a function");
+    }
   };
-
-  
 
   const handleAddUser = () => {
     if (newUser.trim()) {
@@ -88,49 +85,45 @@ const ChatComponent = ({ currentUser, onLogout }) => {
 
   return (
     <div className="show-chat">
-        <div className="user-info">
-          <h2>Users</h2>
-          <div className="add-user">
-            <input
-              type="text"
-              value={newUser}
-              onChange={(e) => setNewUser(e.target.value)}
-              placeholder="Add new user"
-            />
-            <button onClick={handleAddUser}>Add User</button>
-          </div>
-          <div className="user-list">
-            {users.map((user) => (
-              <div key={user.name} onClick={() => handleSelectUser(user)}>
-                {user.name}
-                <br />
-                {user.actionTime}
-              </div>
-            ))}
-          </div>
-          <form onSubmit={handleLogout}>
-            <button onClick={handleLogout} className="logout-button">
-              Logout
-            </button>
-          </form>
+      <div className="user-info">
+        <h2>Users</h2>
+        <div className="add-user">
+          <input
+            type="text"
+            value={newUser}
+            onChange={(e) => setNewUser(e.target.value)}
+            placeholder="Add new user"
+          />
+          <button onClick={handleAddUser}>Add User</button>
         </div>
-        <div className="chat-messages">
-          <div className="chat-header">{selectedUserName}</div>
-          {currentUserMessages.length > 0 ? (
-            currentUserMessages.map((message, index) => (
-              <Message
-                key={index}
-                text={message.data?.data?.message}
-                sender={
-                  message.data?.data?.sender === currentUser ? "me" : "you"
-                }
-              />
-            ))
-          ) : (
-            <p>Please select a user to send the message.</p>
-          )}
+        <div className="user-list">
+          {users.map((user) => (
+            <div key={user.name} onClick={() => handleSelectUser(user)}>
+              {user.name}
+              <br />
+              {user.actionTime}
+            </div>
+          ))}
         </div>
+        <button onClick={handleLogout} className="logout-button">
+          Logout
+        </button>
       </div>
+      <div className="chat-messages">
+        <div className="chat-header">{selectedUserName}</div>
+        {currentUserMessages.length > 0 ? (
+          currentUserMessages.map((message, index) => (
+            <Message
+              key={index}
+              text={message.data?.data?.message}
+              sender={message.data?.data?.sender === currentUser ? "me" : "you"}
+            />
+          ))
+        ) : (
+          <p>Please select a user to send the message.</p>
+        )}
+      </div>
+    </div>
   );
 };
 
