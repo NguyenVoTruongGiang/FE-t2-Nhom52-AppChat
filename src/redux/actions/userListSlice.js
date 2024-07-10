@@ -2,7 +2,7 @@ import { createSlice } from "@reduxjs/toolkit"
 
 const initialState = {
   users: [],
-  page: 1
+  page: 1,
 }
 
 const userListSlice = createSlice({
@@ -10,14 +10,14 @@ const userListSlice = createSlice({
   initialState,
   reducers: {
     setUserList: (state, action) => {
-      console.log("Updating user list in state:", action.payload)
-      state.users = action.payload
+      console.log("Updating user list in state:", action.payload);
+      state.users = action.payload;
     },
     setPage: (state, action) => {
-      state.page = action.payload
+      state.page = action.payload;
     }
   }
-})
+});
 
-export const { setUserList, setPage } = userListSlice.actions
-export default userListSlice.reducer
+export const { setUserList, setPage } = userListSlice.actions;
+export default userListSlice.reducer;

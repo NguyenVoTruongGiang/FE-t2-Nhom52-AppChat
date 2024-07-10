@@ -7,40 +7,41 @@ import { setUserList } from "../redux/actions/userListSlice";
 
 const ChatComponent = ({ currentUser, onLogout }) => {
   const dispatch = useDispatch();
-  const { messages, sendChatMessage, addUser } = useWebSocket(currentUser);
+  const { messages, sendChatMessage, addUser, getUserList } = useWebSocket(currentUser);
   const users = useSelector((state) => state.userList.users);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [chatType, setChatType] = useState("");
+  const [chatType, setChatType] = useState(null);
   const [selectedUserName, setSelectedUserName] = useState("");
   const [messageInput, setMessageInput] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [currentUserMessages, setCurrentUserMessages] = useState([]);
   const [newUser, setNewUser] = useState("");
 
-  // Handle incoming messages
   useEffect(() => {
     messages.forEach((message) => {
       console.log("Received message:", message);
       switch (message.event) {
         case "GET_USER_LIST":
           if (message.status === "success") {
-            dispatch(setUserList(message.data));
+            dispatch(setUserList(message.data.users));
+            getUserList();
+            alert("GET_USER_LIST success.");
           } else {
             alert("GET_USER_LIST failed. Please try again.");
           }
           break;
-        // case "LOGOUT":
-        //   if (message.status === "success") {
-        //     onLogout();
-        //   } else {
-        //     alert("Logout failed. Please try again.");
-        //   }
-        //   break;
+        case "LOGOUT":
+          if (message.status === "success") {
+            onLogout();
+          } else {
+            alert("Logout failed. Please try again.");
+          }
+          break;
         default:
           break;
       }
     });
-  }, [messages, dispatch]);
+  }, [messages, dispatch, getUserList]);
 
   // Handle sending messages
   const handleSendMessage = () => {
@@ -60,20 +61,20 @@ const ChatComponent = ({ currentUser, onLogout }) => {
   const handleSelectUser = (user) => {
     setSelectedUser(user.id);
     setSelectedUserName(user.name);
-    setChatType("private");
+    if (user.type === 0) {
+      setChatType("user");
+    } else if (user.type === 1) {
+      setChatType("group");
+    }
     // Filter messages for the selected user
     const filteredMessages = messages.filter(
-      (msg) => msg.from === user.id || msg.to === user.id
+      (msg) => msg.from === user.name || msg.to === user.name
     );
     setCurrentUserMessages(filteredMessages);
   };
 
   const handleLogout = () => {
-    if (typeof onLogout === "function") {
-      onLogout();
-    } else {
-      console.error("onLogout is not a function");
-    }
+    onLogout();
   };
 
   const handleAddUser = () => {
@@ -87,23 +88,28 @@ const ChatComponent = ({ currentUser, onLogout }) => {
     <div className="show-chat">
       <div className="user-info">
         <h2>Users</h2>
-        <div className="add-user">
-          <input
-            type="text"
-            value={newUser}
-            onChange={(e) => setNewUser(e.target.value)}
-            placeholder="Add new user"
-          />
-          <button onClick={handleAddUser}>Add User</button>
-        </div>
         <div className="user-list">
-          {users.map((user) => (
-            <div key={user.name} onClick={() => handleSelectUser(user)}>
-              {user.name}
-              <br />
-              {user.actionTime}
-            </div>
-          ))}
+          {users
+            .filter((user) => user.type === 0)
+            .map((user) => (
+              <div key={user.name} onClick={() => handleSelectUser(user)}>
+                {user.name}
+                <br />
+                {user.actionTime}
+              </div>
+            ))}
+        </div>
+        <h2>Groups</h2>
+        <div className="group-list">
+          {users
+            .filter((user) => user.type === 1)
+            .map((user) => (
+              <div key={user.name} onClick={() => handleSelectUser(user)}>
+                {user.name}
+                <br />
+                {user.actionTime}
+              </div>
+            ))}
         </div>
         <button onClick={handleLogout} className="logout-button">
           Logout

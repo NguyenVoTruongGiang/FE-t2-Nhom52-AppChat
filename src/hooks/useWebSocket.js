@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-const useWebSocket = (currentUser, dispatch) => {
+const useWebSocket = (currentUser) => {
   const [messages, setMessages] = useState([]);
   const [users] = useState(() => {
     const userKey = currentUser ? `users_${currentUser}` : "default_user";
@@ -23,9 +23,6 @@ const useWebSocket = (currentUser, dispatch) => {
         const receivedMessage = JSON.parse(event.data);
         console.log("Parsed message:", receivedMessage);
         setMessages((prevMessages) => [...prevMessages, receivedMessage]);
-        if (receivedMessage.event === 'GET_USERS_SUCCESS') {
-          dispatch({ type: 'GET_USERS_SUCCESS', payload: receivedMessage.data });
-        }
       } catch (error) {
         console.error("Failed to parse message from the server:", error);
       }
@@ -40,7 +37,7 @@ const useWebSocket = (currentUser, dispatch) => {
         socketRef.current.close();
       }
     };
-  }, [url, dispatch]);
+  }, [url]);
 
   useEffect(() => {
     if (currentUser) {
@@ -104,11 +101,11 @@ const useWebSocket = (currentUser, dispatch) => {
     );
   };
 
-  // const logout = () => {
-  //   sendMessage(
-  //     JSON.stringify({ action: "onchat", data: { event: "LOGOUT" } })
-  //   );
-  // };
+  const logout = () => {
+    sendMessage(
+      JSON.stringify({ action: "onchat", data: { event: "LOGOUT" } })
+    );
+  };
 
   const createRoom = (name) => {
     sendMessage(
@@ -188,7 +185,7 @@ const useWebSocket = (currentUser, dispatch) => {
     loginUser,
     sendChatMessage,
     users,
-    // logout,
+    logout,
     createRoom,
     joinRoom,
     getRoomChatMessages,
