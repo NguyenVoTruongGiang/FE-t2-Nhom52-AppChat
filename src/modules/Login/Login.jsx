@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import useWebSocket from "../../hooks/useWebSocket";
+import { useWebSocket } from "../../hooks/useWebSocket";
 import "./Login.css";
 
 const Login = ({ onLogin }) => {
@@ -10,16 +10,28 @@ const Login = ({ onLogin }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    messages.forEach((message) => {
-      if (message.event === "LOGIN") {
-        if (message.status === "success") {
-          onLogin(username);
-          navigate(`/chat/${username}`);
-        } else {
-          alert("Login failed. Please try again.");
+    if (messages && Array.isArray(messages)) {
+      messages.forEach((message) => {
+        if (message.event === "LOGIN") {
+          if (message.status === "success") {
+            onLogin(username);
+            navigate(`/chat/${username}`);
+          } else if (message.mes === "You are already logged in") {
+            onLogin(username);
+            navigate(`/chat/${username}`);
+          } else {
+            alert("Login failed. Please try again.");
+          }
+        } else if (message.event === "RE_LOGIN") {
+          if (message.status === "success") {
+            onLogin(username);
+            navigate(`/chat/${username}`);
+          } else {
+            alert("Re-login failed. Please try again.");
+          }
         }
-      }
-    });
+      });
+    }
   }, [messages, username, onLogin, navigate]);
 
   const handleLogin = (e) => {

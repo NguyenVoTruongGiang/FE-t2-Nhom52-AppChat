@@ -1,133 +1,200 @@
 import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import Message from "./Message";
-import "../App.css";
-import useWebSocket from "../hooks/useWebSocket";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faSmile } from "@fortawesome/free-solid-svg-icons";
+import EmojiPicker from "emoji-picker-react";
+import "./chat.css";
+import { WebSocketProvider, useWebSocket } from "../hooks/useWebSocket";
 import { setUserList } from "../redux/actions/userListSlice";
+import {
+  addMessage,
+  setChatMessages,
+  } from "../redux/actions/chatSlice";
 
-const ChatComponent = ({ currentUser, onLogout }) => {
+const ChatComponent = ({ currentUser, onLogout, mes = [] }) => {
   const dispatch = useDispatch();
-  const { messages, sendChatMessage, addUser, getUserList } = useWebSocket(currentUser);
-  const users = useSelector((state) => state.userList.users);
+  const {
+    messages,
+    getUserList,
+    getRoomChatMessages,
+    getPeopleChatMessages,
+    sendChatMessage,
+  } = useWebSocket(currentUser);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [chatType, setChatType] = useState(null);
   const [selectedUserName, setSelectedUserName] = useState("");
+  const [filterType, setFilterType] = useState(null);
   const [messageInput, setMessageInput] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [currentUserMessages, setCurrentUserMessages] = useState([]);
-  const [newUser, setNewUser] = useState("");
+  const [username, setUsername] = useState('');
+  // const username = useSelector((state) => state.user.username);
+  const users = useSelector((state) => state.userList.users || []);
+  const chatMessages = useSelector((state) => state.chat.chatMessages || []);
 
   useEffect(() => {
-    messages.forEach((message) => {
-      console.log("Received message:", message);
-      switch (message.event) {
-        case "GET_USER_LIST":
-          if (message.status === "success") {
-            dispatch(setUserList(message.data.users));
-            getUserList();
-            alert("GET_USER_LIST success.");
-          } else {
-            alert("GET_USER_LIST failed. Please try again.");
-          }
-          break;
-        case "LOGOUT":
-          if (message.status === "success") {
-            onLogout();
-          } else {
-            alert("Logout failed. Please try again.");
-          }
-          break;
-        default:
-          break;
-      }
-    });
-  }, [messages, dispatch, getUserList]);
+    getUserList();
+  }, [getUserList]);
 
-  // Handle sending messages
+  useEffect(() => {
+    const handleGetUserList = () => {
+      if (messages && Array.isArray(messages)) {
+        messages.forEach((message) => {
+          if (
+            message.event === "GET_USER_LIST" &&
+            message.status === "success"
+          ) {
+            dispatch(setUserList(message.data));
+          }
+        });
+      }
+    };
+
+    handleGetUserList();
+  }, [messages, dispatch]);
+
+  useEffect(() => {
+    const handleSendMess = () => {
+      if (messages && Array.isArray(messages)) {
+        messages.forEach((message) => {
+          if (
+            message.event === "GET_PEOPLE_CHAT_MES" &&
+            message.status === "success"
+          ) {
+            dispatch(setChatMessages([...message.data].reverse()));
+          } else if (
+            message.event === "GET_USER_LIST" &&
+            message.status === "success"
+          ) {
+            dispatch(setUserList(message.data));
+          }
+        });
+      }
+    };
+
+    handleSendMess();
+  }, [messages, dispatch]);
+
   const handleSendMessage = () => {
+    console.log("Username:", username);
     if (messageInput.trim() !== "" && selectedUser) {
-      sendChatMessage({
+      const newMessage = {
+        id: Date.now(),
+        name: username,
+        type: 0,
         to: selectedUser,
-        message: messageInput,
-        type: chatType,
-      });
+        mes: messageInput,
+        createAt: new Date().toISOString(),
+      };
+      sendChatMessage("people", selectedUser, messageInput);
+      dispatch(addMessage(newMessage));
       setMessageInput("");
     } else {
-      alert("Please select a user and enter a message to send.");
+      alert("Please select a user to send the message.");
     }
   };
 
-  // Select a user to chat with
+  const toggleEmojiPicker = () => {
+    setShowEmojiPicker(!showEmojiPicker);
+  };
+
+  const handleEmojiClick = (event, emojiObject) => {
+    setMessageInput((prev) => prev + emojiObject.emoji);
+  };
+
+  const handleChange = (event) => {
+    setMessageInput(event.target.value);
+  };
+
   const handleSelectUser = (user) => {
-    setSelectedUser(user.id);
+    setSelectedUser(user.name);
     setSelectedUserName(user.name);
     if (user.type === 0) {
-      setChatType("user");
+      getPeopleChatMessages(user.name, 1);
     } else if (user.type === 1) {
-      setChatType("group");
+      getRoomChatMessages(user.name, 1);
     }
-    // Filter messages for the selected user
-    const filteredMessages = messages.filter(
-      (msg) => msg.from === user.name || msg.to === user.name
-    );
-    setCurrentUserMessages(filteredMessages);
   };
 
   const handleLogout = () => {
     onLogout();
   };
 
-  const handleAddUser = () => {
-    if (newUser.trim()) {
-      addUser(newUser);
-      setNewUser("");
-    }
+  const handleFilterChange = (type) => {
+    setFilterType(type);
   };
 
+  const filteredUsers = users.filter(
+    (user) => filterType === null || user.type === filterType
+  );
+
   return (
-    <div className="show-chat">
-      <div className="user-info">
-        <h2>Users</h2>
-        <div className="user-list">
-          {users
-            .filter((user) => user.type === 0)
-            .map((user) => (
-              <div key={user.name} onClick={() => handleSelectUser(user)}>
-                {user.name}
-                <br />
-                {user.actionTime}
-              </div>
+    <div className="chat-container">
+      <div className="show-chat">
+        <div className="user-info">
+          <div className="btn-group" role="group" aria-label="Basic example">
+            <button
+              type="button"
+              className={`btn ${
+                filterType === 0 ? "btn-primary" : "btn-secondary"
+              }`}
+              onClick={() => handleFilterChange(0)}
+            >
+              People
+            </button>
+            <button
+              type="button"
+              className={`btn ${
+                filterType === 1 ? "btn-primary" : "btn-secondary"
+              }`}
+              onClick={() => handleFilterChange(1)}
+            >
+              Groups
+            </button>
+          </div>
+          <ul className="user-list">
+            {filteredUsers.map((user) => (
+              <li
+                className={`user-item ${selectedUser === user ? "active" : ""}`}
+                key={user.name}
+                onClick={() => handleSelectUser(user)}
+              >
+                <p>{user.name}</p>
+                <p>{user.actionTime}</p>
+              </li>
             ))}
+          </ul>
+          <button onClick={handleLogout} className="logout-button">
+            Logout
+          </button>
         </div>
-        <h2>Groups</h2>
-        <div className="group-list">
-          {users
-            .filter((user) => user.type === 1)
-            .map((user) => (
-              <div key={user.name} onClick={() => handleSelectUser(user)}>
-                {user.name}
-                <br />
-                {user.actionTime}
-              </div>
-            ))}
+        <div className="chat-messages">
+          <div className="chat-header">{selectedUserName}</div>
+          {mes.map((message) => (
+            <div
+              key={message.id}
+              messages={chatMessages}
+              username={username}
+              className={`message-box ${
+                username === currentUser ? "me" : "you"
+              }`}
+            >
+              {message.mes}
+            </div>
+          ))}
         </div>
-        <button onClick={handleLogout} className="logout-button">
-          Logout
-        </button>
       </div>
-      <div className="chat-messages">
-        <div className="chat-header">{selectedUserName}</div>
-        {currentUserMessages.length > 0 ? (
-          currentUserMessages.map((message, index) => (
-            <Message
-              key={index}
-              text={message.data?.data?.message}
-              sender={message.data?.data?.sender === currentUser ? "me" : "you"}
-            />
-          ))
-        ) : (
-          <p>Please select a user to send the message.</p>
-        )}
+
+      <div className="chat-input">
+        <div className="emoji-icon" onClick={toggleEmojiPicker}>
+          <FontAwesomeIcon icon={faSmile} />
+        </div>
+        {showEmojiPicker && <EmojiPicker onEmojiClick={handleEmojiClick} />}
+        <input
+          type="text"
+          placeholder="Type your message..."
+          value={messageInput}
+          onChange={handleChange}
+        />
+        <button onClick={handleSendMessage}>Send</button>
       </div>
     </div>
   );
