@@ -1,23 +1,24 @@
-import { useEffect, useRef, useState } from "react";
+// WebSocketContext.js
+import React, { createContext, useContext, useEffect, useState } from 'react';
 
-const useWebSocket = (currentUser) => {
+const WebSocketContext = createContext();
+
+export const WebSocketProvider = ({ children }) => {
+  const [socket, setSocket] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [users] = useState(() => {
-    const userKey = currentUser ? `users_${currentUser}` : "default_user";
-    const savedUsers = localStorage.getItem(userKey);
-    return savedUsers ? JSON.parse(savedUsers) : [];
-  });
-  const socketRef = useRef(null);
+  const [isConnected, setIsConnected] = useState(false);
   const url = "ws://140.238.54.136:8080/chat/chat";
 
   useEffect(() => {
-    socketRef.current = new WebSocket(url);
+    const newSocket = new WebSocket(url);
 
-    socketRef.current.onopen = () => {
+    newSocket.onopen = () => {
       console.log("WebSocket connected successfully.");
+      setSocket(newSocket);
+      setIsConnected(true);
     };
 
-    socketRef.current.onmessage = (event) => {
+    newSocket.onmessage = (event) => {
       console.log("Received message from server:", event.data);
       try {
         const receivedMessage = JSON.parse(event.data);
@@ -28,30 +29,26 @@ const useWebSocket = (currentUser) => {
       }
     };
 
-    socketRef.current.onclose = () => {
+    newSocket.onclose = () => {
       console.log("WebSocket connection closed.");
+      setSocket(null);
+      setIsConnected(false);
     };
 
     return () => {
-      if (socketRef && socketRef.current.readyState === WebSocket.OPEN) {
-        socketRef.current.close();
+      if (socket) {
+        socket.close();
+        setSocket(null);
+        setIsConnected(false);
       }
     };
   }, [url]);
 
-  useEffect(() => {
-    if (currentUser) {
-      const userKey = `users_${currentUser}`;
-      localStorage.setItem(userKey, JSON.stringify(users));
-      console.log(currentUser);
-    }
-  }, [users, currentUser]);
-
   const sendMessage = (message) => {
-    if (socketRef.current.readyState === WebSocket.OPEN) {
-      socketRef.current.send(message);
+    if (isConnected && socket) {
+      socket.send(message);
     } else {
-      console.error("WebSocket is not open.");
+      console.error("WebSocket is not connected.");
     }
   };
 
@@ -79,6 +76,21 @@ const useWebSocket = (currentUser) => {
           data: {
             user: username,
             pass: password,
+          },
+        },
+      })
+    );
+  };
+
+  const reLogin = (user, code) => {
+    sendMessage(
+      JSON.stringify({
+        action: "onchat",
+        data: {
+          event: "RE_LOGIN",
+          data: {
+            user: user,
+            pass: code,
           },
         },
       })
@@ -178,13 +190,14 @@ const useWebSocket = (currentUser) => {
     );
   };
 
-  return {
-    messages,
+  const value = {
+    socket,
+    isConnected,
     sendMessage,
     registerUser,
     loginUser,
+    reLogin,
     sendChatMessage,
-    users,
     logout,
     createRoom,
     joinRoom,
@@ -192,7 +205,20 @@ const useWebSocket = (currentUser) => {
     getPeopleChatMessages,
     checkUser,
     getUserList,
+    messages,
   };
+
+  return (
+    <WebSocketContext.Provider value={value}>
+      {children}
+    </WebSocketContext.Provider>
+  );
 };
 
-export default useWebSocket;
+export const useWebSocket = () => {
+  const context = useContext(WebSocketContext);
+  if (!context) {
+    throw new Error('useWebSocket must be used within a WebSocketProvider');
+  }
+  return context;
+};

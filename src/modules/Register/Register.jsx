@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import useWebSocket from "../../hooks/useWebSocket";
+import {WebSocketProvider, useWebSocket} from "../../hooks/useWebSocket";
 import "./Register.css";
 
 const Register = () => {
@@ -10,16 +10,18 @@ const Register = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    messages.forEach((message) => {
-      if (message.event === "REGISTER") {
-        if (message.status === "success") {
-          alert("Registration successful! Please login.");
-          navigate("/login");
-        } else {
-          alert("Username already exists. Please choose another.");
+    if (messages && Array.isArray(messages)) {
+      messages.forEach((message) => {
+        if (message.event === "REGISTER") {
+          if (message.status === "success") {
+            alert("Registration successful! Please login.");
+            navigate("/login");
+          } else {
+            alert("Username already exists. Please choose another.");
+          }
         }
-      }
-    });
+      });
+    }
   }, [messages, navigate]);
 
   const handleRegister = (e) => {
