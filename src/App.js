@@ -31,6 +31,7 @@ const App = () => {
   return (
     <Router>
       <Routes>
+      {/* <Route path="/" element={<Navigate to="/login" />} /> */}
         <Route path="/login" element={isLoggedIn ? <Navigate to={`/chat/${currentUser}`} /> : <Login onLogin={handleLogin} />} />
         <Route path="/register" element={<Register />} />
         <Route path="/chat/:username" element={isLoggedIn ? <ChatContainer currentUser={currentUser} onLogout={handleLogout} /> : <Navigate to="/login" />} />
