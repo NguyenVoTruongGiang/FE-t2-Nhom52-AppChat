@@ -6,10 +6,7 @@ import EmojiPicker from "emoji-picker-react";
 import "./chat.css";
 import { WebSocketProvider, useWebSocket } from "../hooks/useWebSocket";
 import { setUserList } from "../redux/actions/userListSlice";
-import {
-  addMessage,
-  setChatMessages,
-  } from "../redux/actions/chatSlice";
+import { addMessage, setChatMessages } from "../redux/actions/chatSlice";
 
 const ChatComponent = ({ currentUser, onLogout, mes = [] }) => {
   const dispatch = useDispatch();
@@ -25,10 +22,9 @@ const ChatComponent = ({ currentUser, onLogout, mes = [] }) => {
   const [filterType, setFilterType] = useState(null);
   const [messageInput, setMessageInput] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [username, setUsername] = useState('');
-  // const username = useSelector((state) => state.user.username);
+  const username = useSelector((state) => state.user.username);
   const users = useSelector((state) => state.userList.users || []);
-  const chatMessages = useSelector((state) => state.chat.chatMessages || []);
+  const chatMessages = useSelector((state) => state.chat.messages || []);
 
   useEffect(() => {
     getUserList();
@@ -59,6 +55,7 @@ const ChatComponent = ({ currentUser, onLogout, mes = [] }) => {
             message.event === "GET_PEOPLE_CHAT_MES" &&
             message.status === "success"
           ) {
+            console.log("Received people chat messages:", message.data);
             dispatch(setChatMessages([...message.data].reverse()));
           } else if (
             message.event === "GET_USER_LIST" &&
@@ -74,16 +71,17 @@ const ChatComponent = ({ currentUser, onLogout, mes = [] }) => {
   }, [messages, dispatch]);
 
   const handleSendMessage = () => {
-    console.log("Username:", username);
+    console.log("Username:", currentUser);
     if (messageInput.trim() !== "" && selectedUser) {
       const newMessage = {
         id: Date.now(),
-        name: username,
+        name: currentUser,
         type: 0,
         to: selectedUser,
         mes: messageInput,
         createAt: new Date().toISOString(),
       };
+      console.log("Sending message:", newMessage);
       sendChatMessage("people", selectedUser, messageInput);
       dispatch(addMessage(newMessage));
       setMessageInput("");
@@ -97,20 +95,26 @@ const ChatComponent = ({ currentUser, onLogout, mes = [] }) => {
   };
 
   const handleEmojiClick = (event, emojiObject) => {
-    setMessageInput((prev) => prev + emojiObject.emoji);
+    const emoji = emojiObject.emoji;
+    if (emoji) {
+      setMessageInput((prev) => prev + emoji);
+    } else {
+      console.error("Emoji object does not contain a recognizable emoji property");
+    }
   };
 
   const handleChange = (event) => {
     setMessageInput(event.target.value);
   };
 
-  const handleSelectUser = (user) => {
-    setSelectedUser(user.name);
-    setSelectedUserName(user.name);
-    if (user.type === 0) {
-      getPeopleChatMessages(user.name, 1);
-    } else if (user.type === 1) {
-      getRoomChatMessages(user.name, 1);
+  const handleSelectUser = (username) => {
+    setSelectedUser(username.name);
+    setSelectedUserName(username.name);
+    if (username.type === 0) {
+      console.log("Fetching people chat messages for:", username.name);
+      getPeopleChatMessages(username.name, 1);
+    } else if (username.type === 1) {
+      getRoomChatMessages(username.name, 1);
     }
   };
 
@@ -168,18 +172,20 @@ const ChatComponent = ({ currentUser, onLogout, mes = [] }) => {
         </div>
         <div className="chat-messages">
           <div className="chat-header">{selectedUserName}</div>
-          {mes.map((message) => (
-            <div
-              key={message.id}
-              messages={chatMessages}
-              username={username}
-              className={`message-box ${
-                username === currentUser ? "me" : "you"
-              }`}
-            >
-              {message.mes}
-            </div>
-          ))}
+          {Array.isArray(chatMessages) && chatMessages.length > 0 ? (
+            chatMessages.map((message) => (
+              <div
+                key={message.id}
+                className={`message ${
+                  message.name === currentUser ? "me" : "you"
+                }`}
+              >
+                {message.mes}
+              </div>
+            ))
+          ) : (
+            <p>No messages to display</p>
+          )}
         </div>
       </div>
 
@@ -194,7 +200,7 @@ const ChatComponent = ({ currentUser, onLogout, mes = [] }) => {
           value={messageInput}
           onChange={handleChange}
         />
-        <button onClick={handleSendMessage}>Send</button>
+        <button onClick={handleSendMessage} className="btnSend">Send</button>
       </div>
     </div>
   );
