@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSmile } from "@fortawesome/free-solid-svg-icons";
+import { faSmile, faUser } from "@fortawesome/free-solid-svg-icons";
 import EmojiPicker from "emoji-picker-react";
-import "./chat.css";
+import "./css/chat.css";
 import { WebSocketProvider, useWebSocket } from "../hooks/useWebSocket";
-import { setUserList } from "../redux/actions/userListSlice";
+import { setUserList, addUserToList } from "../redux/actions/userListSlice";
 import { addMessage, setChatMessages } from "../redux/actions/chatSlice";
 
 const ChatComponent = ({ currentUser, onLogout, mes = [] }) => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const {
     messages,
     getUserList,
@@ -21,10 +23,12 @@ const ChatComponent = ({ currentUser, onLogout, mes = [] }) => {
   const [selectedUserName, setSelectedUserName] = useState("");
   const [filterType, setFilterType] = useState(null);
   const [messageInput, setMessageInput] = useState("");
+  const [newUser, setNewUser] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const username = useSelector((state) => state.user.username);
   const users = useSelector((state) => state.userList.users || []);
   const chatMessages = useSelector((state) => state.chat.messages || []);
+  const [virtualUsers, setVirtualUsers] = useState([]);
 
   useEffect(() => {
     getUserList();
@@ -90,6 +94,19 @@ const ChatComponent = ({ currentUser, onLogout, mes = [] }) => {
     }
   };
 
+  const handleAddUser = () => {
+    if (newUser.trim()) {
+      const userType = filterType === 0 ? 0 : 1;
+      const virtualUser = {
+        name: newUser,
+        type: userType,
+        actionTime: new Date().toISOString(),
+      };
+      setVirtualUsers((prevVirtualUsers) => [...prevVirtualUsers, virtualUser]);
+      setNewUser("");
+    }
+  };
+
   const toggleEmojiPicker = () => {
     setShowEmojiPicker(!showEmojiPicker);
   };
@@ -99,7 +116,9 @@ const ChatComponent = ({ currentUser, onLogout, mes = [] }) => {
     if (emoji) {
       setMessageInput((prev) => prev + emoji);
     } else {
-      console.error("Emoji object does not contain a recognizable emoji property");
+      console.error(
+        "Emoji object does not contain a recognizable emoji property"
+      );
     }
   };
 
@@ -120,13 +139,14 @@ const ChatComponent = ({ currentUser, onLogout, mes = [] }) => {
 
   const handleLogout = () => {
     onLogout();
+    navigate("/login");
   };
 
   const handleFilterChange = (type) => {
     setFilterType(type);
   };
 
-  const filteredUsers = users.filter(
+  const filteredUsers =  [...users, ...virtualUsers].filter(
     (user) => filterType === null || user.type === filterType
   );
 
@@ -134,7 +154,7 @@ const ChatComponent = ({ currentUser, onLogout, mes = [] }) => {
     <div className="chat-container">
       <div className="show-chat">
         <div className="user-info">
-          <div className="btn-group" role="group" aria-label="Basic example">
+          <div className="typeBtn">
             <button
               type="button"
               className={`btn ${
@@ -154,6 +174,19 @@ const ChatComponent = ({ currentUser, onLogout, mes = [] }) => {
               Groups
             </button>
           </div>
+          <div>
+            {filterType === 0 && (
+              <div className="add-user">
+                <input
+                  type="text"
+                  placeholder="Add new person"
+                  value={newUser}
+                  onChange={(e) => setNewUser(e.target.value)}
+                />
+                <button onClick={handleAddUser}>Add Person</button>
+              </div>
+            )}
+          </div>
           <ul className="user-list">
             {filteredUsers.map((user) => (
               <li
@@ -161,7 +194,10 @@ const ChatComponent = ({ currentUser, onLogout, mes = [] }) => {
                 key={user.name}
                 onClick={() => handleSelectUser(user)}
               >
-                <p>{user.name}</p>
+                <p>
+                  <FontAwesomeIcon icon={faUser} />
+                  {user.name}
+                </p>
                 <p>{user.actionTime}</p>
               </li>
             ))}
@@ -171,7 +207,10 @@ const ChatComponent = ({ currentUser, onLogout, mes = [] }) => {
           </button>
         </div>
         <div className="chat-messages">
-          <div className="chat-header">{selectedUserName}</div>
+          <div className="chat-header">
+            {selectedUser && <FontAwesomeIcon icon={faUser} />}
+            {selectedUserName}
+          </div>
           {Array.isArray(chatMessages) && chatMessages.length > 0 ? (
             chatMessages.map((message) => (
               <div
@@ -180,7 +219,11 @@ const ChatComponent = ({ currentUser, onLogout, mes = [] }) => {
                   message.name === currentUser ? "me" : "you"
                 }`}
               >
-                {message.mes}
+                <div style={{ fontSize: "15px" }}>
+                  <FontAwesomeIcon icon={faUser} /> {message.name} <br />
+                </div>
+                <div style={{ margin: "5px" }}>{message.mes}</div>
+                <div style={{ fontSize: "15px" }}>{message.createAt}</div>
               </div>
             ))
           ) : (
@@ -195,12 +238,15 @@ const ChatComponent = ({ currentUser, onLogout, mes = [] }) => {
         </div>
         {showEmojiPicker && <EmojiPicker onEmojiClick={handleEmojiClick} />}
         <input
+          className="inputMessage"
           type="text"
           placeholder="Type your message..."
           value={messageInput}
           onChange={handleChange}
         />
-        <button onClick={handleSendMessage} className="btnSend">Send</button>
+        <button onClick={handleSendMessage} className="btnSend">
+          Send
+        </button>
       </div>
     </div>
   );

@@ -17,8 +17,11 @@ const userListSlice = createSlice({
       console.log("Updating page in state:", action.payload);
       state.page = action.payload;
     },
+    addUserToList: (state, action) => {
+      state.users.push(action.payload);
+    },
   },
 });
 
-export const { setUserList, setPage } = userListSlice.actions;
+export const { setUserList, setPage, addUserToList } = userListSlice.actions;
 export default userListSlice.reducer;
