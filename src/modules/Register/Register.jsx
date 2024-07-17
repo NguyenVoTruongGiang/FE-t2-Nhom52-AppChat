@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {WebSocketProvider, useWebSocket} from "../../hooks/useWebSocket";
-import "./Register.css";
+import "./css/Register.css";
 
 const Register = () => {
   const { registerUser, messages } = useWebSocket();

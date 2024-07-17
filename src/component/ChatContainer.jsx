@@ -1,5 +1,5 @@
 import React from "react";
-import "../App.css";
+import "./css/chat.css";
 import ChatComponent from "./chatComponent";;
 
 const ChatContainer = ({ currentUser, onLogout, messages }) => {
